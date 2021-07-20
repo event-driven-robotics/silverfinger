@@ -1,1 +1,2 @@
 *.cdslck*
+/pcbs/2021_05_first_pcb/__pycache__/*.pyc

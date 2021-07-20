@@ -310,6 +310,7 @@ axes.set_aspect('equal')
 
 # 3d plot
 
+#%%
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
@@ -328,6 +329,8 @@ Zb = radiusOfSphere*np.mgrid[-1:2:2,-1:2:2,-1:2:2][2].flatten() + radiusOfSphere
 # Comment or uncomment following both lines to test the fake bounding box:
 for xb, yb, zb in zip(Xb, Yb, Zb):
    ax.plot([xb], [yb], [zb], 'w')
+
+ax.set_aspect('equal')
 
 plt.grid()
 plt.show()
