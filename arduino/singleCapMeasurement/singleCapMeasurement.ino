@@ -1,7 +1,8 @@
-/* Pin2 has external pu resistor 5k. 
- * Pin2 alternatives between low and input at period 1 s.
- * Pin4 is input wired from pin 2
- * Pin4 output copied to LED state
+/*  Using Arduino to interface to AD7147 capacitance sensor
+ *  Using Arduino 'Due', because 3.3V operation required for AD7147
+ *  Not using dedicated i2c lines but rather using 2 selected digital pins for scl and sda.
+ *  Both wires have external pull-up resistor (used 5.1 k-Ohm). 
+ *  Using 2 different pins to read in those same wires - this is for debugging - to check wiring integrity.
  */
 
 int scl_write_pin = 2; 
@@ -11,19 +12,23 @@ int scl_read_pin = 4;
 int sda_read_pin = 5;
 
 
-void delayy() {
-  delayMicroseconds(10);
+/* A generic delay between protocol steps 
+ * Perhaps this could be lowered - depends on wiring quality; ad7147 can accept up to 400kHz clock
+ * The AD7147 also has different timing constraints for up and down clock phases. 
+ */
+void wait() {
+  delayMicroseconds(10); 
 }
 
 
 void startAd() {
-  // clock should be high anyway - check this
+  // clock should be high coming into this - make sure it is
   pinMode(scl_write_pin, INPUT);
-  delayy();
+  wait();
   //Now lower sda to initiate comm
   pinMode(sda_write_pin, OUTPUT);
   digitalWrite(sda_write_pin, 0);
-  delayy();
+  wait();
 }
 
 
@@ -32,25 +37,25 @@ void stopAd() {
   // take control of data and pull it low, if it is not already
   pinMode(sda_write_pin, OUTPUT);
   digitalWrite(sda_write_pin, 0);
-  delayy();
+  wait();
   // cycle the clock - lower
   pinMode(scl_write_pin, OUTPUT);
   digitalWrite(scl_write_pin, 0);
-  delayy();
+  wait();
   // cycle the clock - raise
   pinMode(scl_write_pin, INPUT);
-  delayy();
+  wait();
   // data goes high
   pinMode(sda_write_pin, INPUT);
-  delayy();
+  wait();
 }
 
 
-void clockInABit(int bit) {
+void sendBit(int bit) {
   //Lower clock 
   pinMode(scl_write_pin, OUTPUT);
   digitalWrite(scl_write_pin, 0);
-  delayy();
+  wait();
   // Write data  
   if (bit == 1) {
     pinMode(sda_write_pin, INPUT);
@@ -58,33 +63,33 @@ void clockInABit(int bit) {
     pinMode(sda_write_pin, OUTPUT);
     digitalWrite(sda_write_pin, 0);
   }
-  delayy();
+  wait();
   // Raise clock
   pinMode(scl_write_pin, INPUT);
-  delayy();
+  wait();
 }
 
-
+// Hardcoded address of AD7147 - the last two bits are wirable
 void addressAd() {
-  clockInABit(0);
-  clockInABit(1);
-  clockInABit(0);
-  clockInABit(1);
-  clockInABit(1);
-  clockInABit(0);
-  clockInABit(0);  
+  sendBit(0);
+  sendBit(1);
+  sendBit(0);
+  sendBit(1);
+  sendBit(1);
+  sendBit(0);
+  sendBit(0);  
 }
 
 
-void acknowledge() {
+void receiveAcknowledge() {
   pinMode(scl_write_pin, OUTPUT);
   digitalWrite(scl_write_pin, 0);
-  delayy();
+  wait();
   pinMode(sda_write_pin, INPUT);
-  delayy();
+  wait();
   // Raise clock
   pinMode(scl_write_pin, INPUT);
-  delayy();
+  wait();
   // at this point, the acknowledge should be pulled low by the device
   int sda_state = digitalRead(sda_read_pin);
   if (sda_state == 1) {
@@ -96,33 +101,33 @@ void acknowledge() {
 void sendByteAd(int dataByte) {
   int currentBit;
   currentBit = (dataByte & 0x80) != 0;
-  clockInABit(currentBit);
+  sendBit(currentBit);
   currentBit = (dataByte & 0x40) != 0;
-  clockInABit(currentBit);
+  sendBit(currentBit);
   currentBit = (dataByte & 0x20) != 0;
-  clockInABit(currentBit);
+  sendBit(currentBit);
   currentBit = (dataByte & 0x10) != 0;
-  clockInABit(currentBit);
+  sendBit(currentBit);
   currentBit = (dataByte & 0x8) != 0;
-  clockInABit(currentBit);
+  sendBit(currentBit);
   currentBit = (dataByte & 0x4) != 0;
-  clockInABit(currentBit);
+  sendBit(currentBit);
   currentBit = (dataByte & 0x2) != 0;
-  clockInABit(currentBit);
+  sendBit(currentBit);
   currentBit = (dataByte & 0x1) != 0;
-  clockInABit(currentBit);
-  acknowledge();
+  sendBit(currentBit);
+  receiveAcknowledge();
 }
 
 int readBit() {
   pinMode(scl_write_pin, OUTPUT);
   digitalWrite(scl_write_pin, 0); // lower clock
-  delayy();
+  wait();
   pinMode(sda_write_pin, INPUT);
-  delayy();
+  wait();
   // Raise clock
   pinMode(scl_write_pin, INPUT); // raise clock
-  delayy();
+  wait();
   // at this point, sda has the bit from the AD
   int sda_state = digitalRead(sda_read_pin);
   return sda_state;
@@ -147,8 +152,8 @@ void writeAd(int regMsb, int regLsb, int dataMsb, int dataLsb) {
   startAd();
   addressAd(); // 7 bit I2C address
   // write bit
-  clockInABit(0); // write bit
-  acknowledge();  
+  sendBit(0); // write bit
+  receiveAcknowledge();  
   // break regAddr into bytes
   sendByteAd(regMsb);
   sendByteAd(regLsb);
@@ -161,8 +166,8 @@ void readAd(int regMsb, int regLsb) {
   startAd();
   addressAd(); // 7 bit I2C address
   // write bit
-  clockInABit(0); // write bit
-  acknowledge();  
+  sendBit(0);
+  receiveAcknowledge();  
   // break regAddr into bytes
   sendByteAd(regMsb);
   sendByteAd(regLsb);
@@ -171,15 +176,16 @@ void readAd(int regMsb, int regLsb) {
   startAd();
   addressAd(); // 7 bit I2C address
   // read bit
-  clockInABit(1); // read bit
-  acknowledge();
+  sendBit(1); // read bit
+  receiveAcknowledge();
   int msb = readByteAd();
   // We acknowledge the first bit, by  clocking in a 0 - this means we want more data
-  clockInABit(0);
+  sendBit(0);
   int lsb = readByteAd();
   // We acknowledge the second bit, by  clocking in a 1 - this means we don't want any more data
-  clockInABit(1);
+  sendBit(1);
   stopAd();
+  // output timestamp and value as array, to copy and paste straight into python IDE
   int result = msb * 256 + lsb;
   Serial.print("[");
   Serial.print(millis());
@@ -215,19 +221,18 @@ void setup() {
 
   Serial.begin(9600);
   while (!Serial);
-  Serial.println("Programme AD7147 ...");
-
-  // programme AD7147
+  Serial.println("Programming AD7147 ...");
+  // This programmes the Phase 0 registers to do single sided measurement from input 0. 
   writeAd(0, 128, 0, 2);
   writeAd(0, 129, 0b11010000, 0);
-  writeAd(0, 130, 0, 0);
+  writeAd(0, 130, 0, 0); // not sure if from here onwards is necessary.
   writeAd(0, 131, 0, 0);
+  Serial.println("Programmed");
 }
 
 
-// the loop function runs over and over again forever
 void loop() {
   //Serial.println("Reading ... ");
   readAd(0, 0xE0);
-  delay(1);
+  //delay(1);
 }
