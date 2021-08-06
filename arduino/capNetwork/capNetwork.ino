@@ -9,7 +9,7 @@
  *  (e) set the main plate back to OUTPUT = LOW, and set the second plate bac to OUTPUT = LOW
  */
 
-static const uint8_t analog_pins[] = {A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10;A11};
+static const uint8_t analog_pins[] = {A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11};
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -27,31 +27,38 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
+  Serial.print("[");
+  Serial.print(millis());
+  Serial.print(", ");
   for (int receiver = 0; receiver < 12; receiver++) {
-    // Firstly, switch the main pin to INPUT and do an analog read from it (discard this read). This should set the mux to accept it.
+    // Make sure the receiver pin is low 
+    pinMode(analog_pins[receiver], OUTPUT);
+    digitalWrite(analog_pins[receiver], 0);
+    // switch the main pin to INPUT and do an analog read from it (discard this read). This should set the mux to accept it.
     pinMode(analog_pins[receiver], INPUT);
     int value;
     value = analogRead(analog_pins[receiver]); // discard this read
+    //Serial.print("|");
+    //Serial.print(receiver);
+    //Serial.print("|, ");
     for (int sender = 0; sender < 12; sender++) {
       if (sender !=receiver) {
-        pinMode(analog_pins[receiver], INPUT);
         pinMode(analog_pins[sender], OUTPUT);
+        //delay(1);
+        pinMode(analog_pins[receiver], INPUT);
+        //delay(1);
         digitalWrite(analog_pins[sender], 1);
+        //delay(1);
         value = analogRead(analog_pins[receiver]); 
-        Serial.print("[");
-        Serial.print(millis());
-        Serial.print(", ");
-        Serial.print(sender);
-        Serial.print(", ");
-        Serial.print(receiver);
-        Serial.print(", ");
         Serial.print(value);
-        Serial.println("],");
+        Serial.print(", ");
         pinMode(analog_pins[receiver], OUTPUT);
         digitalWrite(analog_pins[receiver], 0);
         pinMode(analog_pins[sender], OUTPUT);
         digitalWrite(analog_pins[sender], 0);
       }
     }
+
   }
+  Serial.println("],");
 }
