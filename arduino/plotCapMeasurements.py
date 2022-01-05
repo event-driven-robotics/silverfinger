@@ -375,14 +375,15 @@ for i, capAtCurrentTime in enumerate(capMinusMean):
     plt.savefig(fileName)
     ims.append(fileName)
     
-#%% Create video file
+# Create video file
     
 import os
 import moviepy.video.io.ImageSequenceClip
-fps=10
+fps = len(ts) / ts[-1]
 
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(ims, fps=fps)
 clip.write_videofile('my_video.mp4')
+
 
 
 #%% Same thing, but consider only selective pairings
@@ -421,9 +422,9 @@ coords = np.array([
     [343, 264],
     [720, 102],
     [539, 174],
-    ])
+    ], dtype=np.float64)
 
-scaleFactor = 2
+scaleFactor = 6
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -466,3 +467,161 @@ for i, capAtCurrentTime in enumerate(capMinusMean):
 fps=10
 clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(ims, fps=fps)
 clip.write_videofile('my_video.mp4')
+
+
+#%% 2021_08_13 We only recorded selective pairings
+
+pairings = [
+[0, 2], [0, 3], [0, 5],
+[1, 2],[1, 4],
+[2, 0], [2, 1], [2, 4], [2, 5],
+[3, 0], [3, 5], [3, 6],
+[4, 0], [4, 1], [4, 2], [4, 5], [4, 7], [4, 8],
+[5, 0], [5, 2], [5, 3], [5, 4], [5, 6], [5, 8],
+[6, 3], [6, 4], [6, 5], [6, 8], [6, 9],
+[7, 4], [7, 8], [7, 10], [7, 11],
+[8, 4], [8, 5], [8, 6], [8, 7], [8, 9], [8, 10], [8, 11],
+[9, 6], [9, 8], [9, 11],
+[10, 7], [10, 11],
+[11, 7], [11, 8], [11, 9], [11, 10],
+]
+
+# Alternatively one-way very reduced set
+pairings = [
+[0, 2], [0, 3], [0, 5],
+[1, 2],[1, 4],
+[2, 4], [2, 5],
+[3, 5], [3, 6],
+[4, 5], [4, 7], [4, 8],
+[5, 6], [5, 8],
+[6, 8], [6, 9],
+[7, 8], [7, 10], [7, 11],
+[8, 9], [8, 11],
+[9, 11],
+[10, 11],
+]
+
+
+photoSource = "C:/data/2021_08_13_silverfinger/testing.png"
+
+import numpy as np
+coords = np.array([
+    [463, 213],
+    [236, 260],
+    [349, 235],
+    [537, 251],
+    [307, 277],
+    [431, 265],
+    [483, 301],
+    [262, 348],
+    [368, 331],
+    [450, 374],
+    [211, 415],
+    [337, 396],
+    ], dtype=np.float64)
+
+scaleFactor = 4
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import matplotlib.image as mpimg
+import os
+import moviepy.video.io.ImageSequenceClip
+
+#import one-sweep-per-line data
+data = np.array(rawData)
+ts = (data[:, 0]) / 1000
+cap = data[:, 1:] / 4096 * 3.3
+
+photo = mpimg.imread(photoSource)
+capMinusMean = cap - np.mean(cap, axis=0)[np.newaxis, :]
+ims = []
+theMin = np.min(capMinusMean)
+theMax = np.max(capMinusMean)
+for i, capAtCurrentTime in enumerate(capMinusMean):
+    plt.close('all')
+    fig, ax = plt.subplots()
+    currentCoords = coords.copy()
+    for pair, capForPair in zip(pairings, capAtCurrentTime):
+        senderIdx = pair[0]
+        receiverIdx = pair[1]
+        currentCoords[senderIdx] = currentCoords[senderIdx] - (
+            coords[senderIdx] - coords[receiverIdx]
+            ) * capForPair * scaleFactor
+        currentCoords[receiverIdx] = currentCoords[receiverIdx] - (
+            coords[receiverIdx] - coords[senderIdx]
+            ) * capForPair * scaleFactor
+    im = ax.imshow(photo, animated=True)
+    im = ax.scatter(currentCoords[:, 0], currentCoords[:, 1], s=50, c='red', marker='o')
+    
+    im = ax.plot()
+    #
+    #title = ax.text(0.5,1.05,"Time: {} s".format(ts[i]), 
+    #                size=plt.rcParams["axes.titlesize"],
+    #                ha="center", transform=ax.transAxes, )
+    im = ax.set_title("Time: {} s".format(ts[i]))
+    fileName = str(i) + '.png'
+    plt.savefig(fileName)
+    ims.append(fileName)
+fps=10
+clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(ims, fps=fps)
+clip.write_videofile('my_video.mp4')
+
+
+#%% Plot selective paired data
+
+
+pairings = [
+[0, 2], [0, 3], [0, 5],
+[1, 2],[1, 4],
+[2, 0], [2, 1], [2, 4], [2, 5],
+[3, 0], [3, 5], [3, 6],
+[4, 0], [4, 1], [4, 2], [4, 5], [4, 7], [4, 8],
+[5, 0], [5, 2], [5, 3], [5, 4], [5, 6], [5, 8],
+[6, 3], [6, 4], [6, 5], [6, 8], [6, 9],
+[7, 4], [7, 8], [7, 10], [7, 11],
+[8, 4], [8, 5], [8, 6], [8, 7], [8, 9], [8, 10], [8, 11],
+[9, 6], [9, 8], [9, 11],
+[10, 7], [10, 11],
+[11, 7], [11, 8], [11, 9], [11, 10],
+]
+
+# Alternative reduced one-way set
+pairings = [
+[0, 2], [0, 3], [0, 5],
+[1, 2],[1, 4],
+[2, 4], [2, 5],
+[3, 5], [3, 6],
+[4, 5], [4, 7], [4, 8],
+[5, 6], [5, 8],
+[6, 8], [6, 9],
+[7, 8], [7, 10], [7, 11],
+[8, 9], [8, 11],
+[9, 11],
+[10, 11],
+]
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+#import one-sweep-per-line data
+data = np.array(rawData)
+ts = (data[:, 0]) / 1000
+cap = data[:, 1:] / 4096 * 3.3
+capMinusMean = cap - np.mean(cap, axis=0)[np.newaxis, :]
+
+plt.close('all')
+
+capIdx = 0
+legendPairs = []
+for capIdx, pair in enumerate(pairings):
+            capCurrent = capMinusMean[:, capIdx]
+            ax = plt.plot(ts, capCurrent)
+            legendPairs.append(pair)
+            
+            
+plt.xlabel('Time (s)')
+plt.ylabel('inter_node transmission of 3.3V pulse (V)')
+plt.legend(legendPairs)
