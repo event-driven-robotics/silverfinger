@@ -86,11 +86,9 @@ void loop() {
   if (refractCountDown_0 <= 0) {
     digitalWrite(pin_reset_0, HIGH);
     if (val_High_0 >= 512) {
-       //Serial.println("0: ON!");
        refractCountDown_0 = refractMs;
        digitalWrite(pin_reset_0, LOW);
     } else if(val_nLow_0 < 512) {
-       //Serial.println("0: OFF!");
        refractCountDown_0 = refractMs;
        digitalWrite(pin_reset_0, LOW);
     };
@@ -100,11 +98,9 @@ void loop() {
   if (refractCountDown_1 <= 0) {
     digitalWrite(pin_reset_1, HIGH);
     if (val_High_1 >= 512) {
-       //Serial.println("1: ON!");
        refractCountDown_1 = refractMs;
        digitalWrite(pin_reset_1, LOW);
     } else if(val_nLow_1 < 512) {
-       //Serial.println("1: OFF!");
        refractCountDown_1 = refractMs;
        digitalWrite(pin_reset_1, LOW);
     };
@@ -114,12 +110,10 @@ void loop() {
   if (refractCountDown_2 <= 0) {
     digitalWrite(pin_reset_2, HIGH);
     if (val_High_2 >= 512) {
-       //Serial.println("2: ON!");
        refractCountDown_2 = refractMs;
        digitalWrite(pin_reset_2, LOW);
     } else if(val_nLow_2 < 512) {
-       //Serial.println("2: OFF!");
-       refractCountDown_2 = refractMs;
+        refractCountDown_2 = refractMs;
        digitalWrite(pin_reset_2, LOW);
     };
   } else {
