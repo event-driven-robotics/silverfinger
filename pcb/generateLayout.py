@@ -57,7 +57,7 @@ widthBus = (numWiresBus + 1) * pitchBus # The specification for the zif connecto
 
 # modelling directives
 spiralEndIds = np.array([450, 540, 630, 720, 810, 900, 1440])
-spiralEndIdsActual = np.ones((numSpirals), dtype=np.int) * 10000
+spiralEndIdsActual = np.ones((numSpirals), dtype=np.int64) * 10000
 
 orientation = np.array([1, -1, 1, -1, 1, -1, 1])[np.newaxis, :]
 extensionAngleMod = np.array([70, 70, 75, 85, 90, 100, 110])
@@ -171,7 +171,7 @@ segIdx = 0
 # We use the direction when we calculate the step from the previous segment
 # to the next.
 # Therefore we initialise it halfway through that step
-running = np.ones((1, numSpirals), dtype=np.bool)
+running = np.ones((1, numSpirals), dtype=bool)
 numRunning = numSpirals
 cumDistOuter = np.zeros((1, numSpirals))
 
@@ -395,7 +395,7 @@ generateLayoutPcb(numSpirals, running,
 
 # 3d plot
 
-'''
+import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 fig = plt.figure()
@@ -408,6 +408,21 @@ for idx in range(numSpirals):
     ax.plot(xOuter3d[:spiralEndIdsActual[idx], idx],
             yOuter3d[:spiralEndIdsActual[idx], idx],
             zOuter3d[:spiralEndIdsActual[idx], idx], 'k')
+    # initial edges
+    ax.plot([xInner3d[0, idx],
+             xOuter3d[0, idx]],
+            [yInner3d[0, idx],
+             yOuter3d[0, idx]],
+            [0,
+             zOuter3d[0, idx]], 'k')
+    # final edges
+    ax.plot([xInner3d[spiralEndIdsActual[idx] - 1, idx],
+             xOuter3d[spiralEndIdsActual[idx] - 1, idx]],
+            [yInner3d[spiralEndIdsActual[idx] - 1, idx],
+             yOuter3d[spiralEndIdsActual[idx] - 1, idx]],
+            [0,
+             zOuter3d[spiralEndIdsActual[idx] - 1, idx]], 'k')
+
 
 # Create cubic bounding box to simulate equal aspect ratio
 Xb = radiusOfSphere*np.mgrid[-1:2:2,-1:2:2,-1:2:2][0].flatten() #+ radiusOfSphere
@@ -419,7 +434,7 @@ for xb, yb, zb in zip(Xb, Yb, Zb):
 
 plt.grid()
 plt.show()
-'''
+
 
 print('Total edge length: ', np.sum(cumDistOuter[-1, :]))
 
